@@ -1,0 +1,12 @@
+# Repository: https://yum.oracle.com/repo/OracleLinux/OL9/oracle/instantclient/x86_64/
+
+[ora-ic]
+name=Oracle Instant Client Linux yum repo
+baseurl=https://yum.oracle.com/repo/OracleLinux/OL$releasever/oracle/instantclient23/$basearch/
+#mirrorlist=
+enabled=1
+gpgcheck=1
+# can be enabled if not behind a proxy because of possible cache issue
+repo_gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+

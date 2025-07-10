@@ -1,0 +1,14 @@
+docker build --build-arg RH_VERSION=9 -t alm9:npp -f ./Dockerfile .
+
+docker run -d \
+	--name aeweb \
+	-p 443:443 \
+	-v /var/www/html:/var/www/html:ro \
+	-v /etc/pki/tls/certs/localhost.crt:/etc/pki/tls/certs/localhost.crt:ro \
+	-v /etc/pki/tls/private/localhost.key:/etc/pki/tls/private/localhost.key:ro \
+	-v /var/www/html/HAE_ConfigFiles/nginx_default.conf:/etc/nginx/conf.d/default.conf \
+	alm9:npp
+
+docker exec -it aeweb /bin/bash
+
+https://github.com/mdawkins/AppsEngineContainer.git

@@ -1,0 +1,64 @@
+ARG RH_VERSION="9"
+
+FROM almalinux:${RH_VERSION}-minimal
+
+# Set environment variables
+ARG RH_VERSION
+ENV PHP_VERSION="84"
+ENV PHP_FVERSION="8.4"
+
+WORKDIR /var/www/
+COPY . .
+
+# Update system and install required packages
+RUN \
+    mv nginx.repo /etc/yum.repos.d/ && \
+    mv oracle-instantclient.repo /etc/yum.repos.d/oracle-instantclient.repo && \
+    mv RPM-GPG-KEY-oracle /etc/pki/rpm-gpg/RPM-GPG-KEY-oracle && \
+    microdnf install -y --nodocs \
+      epel-release \
+      yum-utils && \
+    microdnf update -y --nodocs && \
+    curl -sSL https://rpms.remirepo.net/enterprise/remi-release-${RH_VERSION}.rpm -o /tmp/remi-release-${RH_VERSION}.rpm && \
+    rpm -Uvh /tmp/remi-release-${RH_VERSION}.rpm && \
+    curl -sSL https://packages.microsoft.com/config/rhel/${RH_VERSION}/packages-microsoft-prod.rpm -o /tmp/packages-microsoft-prod.rpm && \
+    rpm -Uvh /tmp/packages-microsoft-prod.rpm && \
+    microdnf module enable -y php:remi-${PHP_FVERSION} && \
+    ACCEPT_EULA=y \
+    microdnf install -y --nodocs \
+      nginx \
+      php \
+      php-mbstring \
+      php-gd \
+      php-bcmath \
+      php-pgsql \
+      php-oci8 \
+      oracle-instantclient-basiclite \
+      php-sqlsrv \
+      php-mysqlnd && \ 
+    microdnf clean all && \
+    rm -rf /var/cache/yum && \
+    rm -rf /usr/lib/.build-id && \
+    rm -rf -- /usr/share/{X11,fonts,licenses,mime,misc,pki} && \
+    rm -rf /tmp/*
+
+RUN \
+    sed -i 's/apache$/nginx/g' /etc/php-fpm.d/www.conf && \
+    LD_LIBRARY_PATH=/usr/lib/oracle/23/client64/lib:$LD_LIBRARY_PATH && \
+    mv nginx.conf /etc/nginx/nginx.conf && \
+    mkdir -p /run/php-fpm && \
+    chown nginx:nginx /run/php-fpm && \
+    chown -R root:nginx /var/lib/php
+
+RUN \
+    rpm -e dnf dnf-plugins-core yum-utils python3-dnf python3-dnf-plugins-core \
+      rpm-build-libs python3-rpm rpm-plugin-systemd-inhibit rpm-sign-libs \
+      python3 python3-libdnf python3-hawkey python3-dbus python3-libcomps \
+      python3-gpg python3-six python3-dateutil python3-systemd python-unversioned-command \
+      python3-setuptools-wheel python3-pip-wheel python3-libs && \
+    rpm -e --nodeps kmod-libs systemd systemd-pam dbus-common dbus-broker logrotate
+
+EXPOSE 443
+VOLUME ["/var/www/html"]
+
+CMD [ "sh","-c","php-fpm -F & exec nginx -g 'daemon off;'" ]

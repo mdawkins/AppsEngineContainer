@@ -1,0 +1,5 @@
+[nginx]
+name=nginx
+baseurl=https://nginx.org/packages/mainline/rhel/$releasever/$basearch/
+gpgcheck=0
+enabled=1
