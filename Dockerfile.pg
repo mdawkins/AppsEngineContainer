@@ -1,0 +1,48 @@
+ARG RH_VERSION="9"
+FROM almalinux:${RH_VERSION}-minimal
+
+ARG RH_VERSION
+ENV PG_VERSION="16"
+ENV ARCH="x86_64"
+
+# Set working directory
+WORKDIR /var/lib/pgsql
+
+# Copy in setup files (optional)
+COPY . .
+
+# Install base tools and add PostgreSQL official repo
+RUN \
+    echo "Installing PostgreSQL ${PG_VERSION} on AlmaLinux ${RH_VERSION}-${ARCH}..." && \
+    microdnf install -y --nodocs \
+      epel-release \
+      yum-utils && \
+    microdnf update -y --nodocs && \
+    microdnf -y module disable postgresql && \
+    curl -sSL https://download.postgresql.org/pub/repos/yum/RPM-GPG-KEY-PGDG -o /etc/pki/rpm-gpg/RPM-GPG-KEY-PGDG && \
+    curl -sSL https://download.postgresql.org/pub/repos/yum/reporpms/EL-${RH_VERSION}-${ARCH}/pgdg-redhat-repo-latest.noarch.rpm -o /tmp/pgdg-redhat-repo.rpm && \
+    rpm -Uvh /tmp/pgdg-redhat-repo.rpm && \
+    microdnf install -y --nodocs \
+      postgresql${PG_VERSION//./}-server \
+      postgresql${PG_VERSION//./} && \
+    microdnf clean all && \
+    rm -rf /var/cache/yum /tmp/*
+
+# Initialize PostgreSQL database
+RUN \
+    # /usr/pgsql-${PG_VERSION}/bin/postgresql-${PG_VERSION}-setup initdb && \
+    mkdir -p /run/postgresql && \
+    chown -R postgres:postgres /var/lib/pgsql /run/postgresql
+
+# Expose PostgreSQL default port
+EXPOSE 5432
+
+# Set volume for data persistence
+VOLUME ["/var/lib/pgsql/${PG_VERSION}/data"]
+
+# Switch to postgres user for security
+USER postgres
+
+# Start PostgreSQL server
+# CMD ["/usr/pgsql-${PG_VERSION}/bin/postgres", "-D", "/var/lib/pgsql/${PG_VERSION}/data"]
+CMD /usr/pgsql-${PG_VERSION}/bin/postgres -D /var/lib/pgsql/${PG_VERSION}/data

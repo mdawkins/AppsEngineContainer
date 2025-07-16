@@ -1,4 +1,5 @@
 ARG RH_VERSION="9"
+# Oracle and MS deps are not available for RHEL 10 yet
 
 FROM almalinux:${RH_VERSION}-minimal
 
@@ -6,12 +7,14 @@ FROM almalinux:${RH_VERSION}-minimal
 ARG RH_VERSION
 ENV PHP_VERSION="84"
 ENV PHP_FVERSION="8.4"
+ENV ARCH="x86_64"
 
 WORKDIR /var/www/
 COPY . .
 
 # Update system and install required packages
 RUN \
+    echo "Installing Nginx+PHP${PHP_FVERSION} on AlmaLinux ${RH_VERSION}-${ARCH}..." && \
     mv nginx.repo /etc/yum.repos.d/ && \
     mv oracle-instantclient.repo /etc/yum.repos.d/oracle-instantclient.repo && \
     mv RPM-GPG-KEY-oracle /etc/pki/rpm-gpg/RPM-GPG-KEY-oracle && \
@@ -50,13 +53,21 @@ RUN \
     chown nginx:nginx /run/php-fpm && \
     chown -R root:nginx /var/lib/php
 
-RUN \
+RUN if [ ${RH_VERSION} = 9 ] ; then \
     rpm -e dnf dnf-plugins-core yum-utils python3-dnf python3-dnf-plugins-core \
       rpm-build-libs python3-rpm rpm-plugin-systemd-inhibit rpm-sign-libs \
       python3 python3-libdnf python3-hawkey python3-dbus python3-libcomps \
       python3-gpg python3-six python3-dateutil python3-systemd python-unversioned-command \
       python3-setuptools-wheel python3-pip-wheel python3-libs && \
-    rpm -e --nodeps kmod-libs systemd systemd-pam dbus-common dbus-broker logrotate
+    rpm -e --nodeps kmod-libs systemd systemd-pam dbus-common dbus-broker logrotate; \
+    elif [ ${RH_VERSION} = 10 ] ; then \
+     rpm -e dnf-plugins-core yum-utils python3-dnf python3-dnf-plugins-core \
+      rpm-build-libs python3-rpm rpm-plugin-systemd-inhibit rpm-sign-libs \
+      python3 python3-libdnf python3-hawkey python3-dbus python3-libcomps \
+      python3-six python3-dateutil python3-systemd python-unversioned-command \
+      python3-pip-wheel python3-libs && \
+    rpm -e --nodeps kmod-libs systemd systemd-pam dbus-common dbus-broker logrotate; \
+    fi
 
 EXPOSE 443
 VOLUME ["/var/www/html"]
