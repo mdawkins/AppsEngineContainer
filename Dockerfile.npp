@@ -1,15 +1,17 @@
 ARG RH_VERSION="9"
+ARG ENABLE_ORACLE="false"
+ARG ENABLE_MSSQL="false"
 # Oracle and MS deps are not available for RHEL 10 yet
 
 FROM almalinux:${RH_VERSION}-minimal
 
 # Set environment variables
 ARG RH_VERSION
+ARG ENABLE_ORACLE
+ARG ENABLE_MSSQL
 ENV PHP_VERSION="84"
 ENV PHP_FVERSION="8.4"
 ENV ARCH="x86_64"
-ENV ENABLE_ORACLE="false"
-ENV ENABLE_MSSQL="false"
 ENV PACKAGES="nginx php php-mbstring php-gd php-bcmath php-pgsql php-mysqlnd"
 
 WORKDIR /var/www/
@@ -23,13 +25,13 @@ RUN \
     if [ "${ENABLE_ORACLE}" = "true" ]; then \
       echo "Oracle Instant Client enabled..." && \
       mv oracle-instantclient.repo /etc/yum.repos.d/oracle-instantclient.repo && \
-      mv RPM-GPG-KEY-oracle /etc/pki/rpm-gpg/RPM-GPG-KEY-oracle; \
+      mv RPM-GPG-KEY-oracle /etc/pki/rpm-gpg/RPM-GPG-KEY-oracle && \
       PACKAGES="${PACKAGES} php-oci8 oracle-instantclient-basiclite"; \
     fi && \
     if [ "${ENABLE_MSSQL}" = "true" ]; then \
       echo "MS SQL Server support enabled..." && \
       curl -sSL https://packages.microsoft.com/config/rhel/${RH_VERSION}/packages-microsoft-prod.rpm -o /tmp/packages-microsoft-prod.rpm && \
-      rpm -Uvh /tmp/packages-microsoft-prod.rpm; \
+      rpm -Uvh /tmp/packages-microsoft-prod.rpm && \
       PACKAGES="${PACKAGES} php-sqlsrv"; \
     fi && \
     echo "Updating metadata & Installing EPEL, yum-utils..." && \
@@ -55,7 +57,7 @@ RUN \
     sed -i 's/apache$/nginx/g' /etc/php-fpm.d/www.conf && \
     # Only add Oracle lib path if directory exists (prevent errors if Oracle not enabled)
     if [ -d "/usr/lib/oracle/23/client64/lib" ]; then \
-       LD_LIBRARY_PATH=/usr/lib/oracle/23/client64/lib:$LD_LIBRARY_PATH && \
+       LD_LIBRARY_PATH=/usr/lib/oracle/23/client64/lib:$LD_LIBRARY_PATH; \
     fi && \
     mv nginx.conf /etc/nginx/nginx.conf && \
     mkdir -p /run/php-fpm && \
