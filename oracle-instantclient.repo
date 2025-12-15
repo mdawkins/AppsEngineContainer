@@ -1,6 +1,6 @@
 # Repository: https://yum.oracle.com/repo/OracleLinux/OL9/oracle/instantclient/x86_64/
 
-[ora-ic]
+[oraic]
 name=Oracle Instant Client Linux yum repo
 baseurl=https://yum.oracle.com/repo/OracleLinux/OL$releasever/oracle/instantclient23/$basearch/
 #mirrorlist=

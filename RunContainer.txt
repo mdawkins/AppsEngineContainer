@@ -1,37 +1,21 @@
-podman build --build-arg RH_VERSION=9 -t alm9:npp -f ./Dockerfile.npp .
-podman build --build-arg RH_VERSION=10 -t alm10:npp -f ./Dockerfile.npp .
-podman build --build-arg RH_VERSION=9 -t alm9:npg16 -f ./Dockerfile.pg16 .
+podman build --build-arg RH_VERSION=10 -t alm:npp -f ./Dockerfile.npp .
 
 podman run -d \
 	--name aeweb \
 	-p 443:443 \
-	-v ~/wwwroot:/var/www/html:z \
-	-v ~/AppsEngineContainer/localhost.crt:/etc/pki/tls/certs/localhost.crt:z \
-	-v ~/AppsEngineContainer/localhost.key:/etc/pki/tls/private/localhost.key:z \
-	-v ~/wwwroot/HAE_ConfigFiles/nginx_default.conf:/etc/nginx/conf.d/default.conf:z \
-	alm9:npp
-
-podman run -d \
-	--name aepg16 \
-	-p 5432:5432 \
-	-v ~/Build/pg16/data:/var/lib/pgsql/16/data:z
-	alm9:pg16
+	-v ~/Containers/wwwroot:/var/www/html:z \
+	-v ~/Containers/AppsEngineContainer/localhost.crt:/etc/pki/tls/certs/localhost.crt:z \
+	-v ~/Containers/AppsEngineContainer/localhost.key:/etc/pki/tls/private/localhost.key:z \
+	-v ~/Containers/wwwroot/HAE_ConfigFiles/nginx_default.conf:/etc/nginx/conf.d/default.conf:z \
+	alm:npp
 
 podman system prune --all
-
 podman stop aeweb && podman container rm aeweb
-
 podman exec -it aeweb /bin/bash
-
-podman exec -it aeweb ss -tlnp
 
 openssl req -x509 -out localhost.crt -keyout localhost.key -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost'
 
 alias docker='podman'
-
 prc() {
     podman stop "$1" && podman container rm "$1"
 }
-
-podman run -it alm9:npp bash -v ~/wwwroot/HAE_ConfigFiles/nginx_default.conf:/etc/nginx/conf.d/default.conf
-podman run -it alm9:pg16 bash -v ~/Build/pg16/data:/var/lib/pgsql/16/data:z
