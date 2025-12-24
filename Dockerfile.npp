@@ -15,7 +15,7 @@ ENV ARCH="x86_64"
 ENV PACKAGES="nginx php php-mbstring php-gd php-bcmath php-pgsql php-mysqlnd"
 
 WORKDIR /var/www/
-COPY . .
+COPY RPM-GPG-KEY-oracle nginx.conf *.repo .
 
 # Update system and install required packages
 RUN \
